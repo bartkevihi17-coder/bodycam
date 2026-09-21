@@ -3,10 +3,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
+local shared = ReplicatedStorage:WaitForChild("Shared")
+local OperatorAppearance = require(shared:WaitForChild("OperatorAppearance"))
+
 local startCampaign = ReplicatedStorage
 	:WaitForChild("BodycamRemotes")
 	:WaitForChild("StartCampaign")
@@ -14,6 +17,16 @@ local startCampaign = ReplicatedStorage
 if player:GetAttribute("CampaignStarted") == true then
 	return
 end
+
+local WHITE = Color3.fromRGB(255, 255, 255)
+local SOFT_WHITE = Color3.fromRGB(224, 228, 231)
+local MUTED = Color3.fromRGB(168, 175, 181)
+local PANEL = Color3.fromRGB(19, 22, 24)
+local BORDER = Color3.fromRGB(193, 200, 205)
+
+local selectedMap = "COMPLEX_01"
+local selectionLocked = false
+local renderConnection: RBXScriptConnection?
 
 local function setCoreGui(enabled: boolean)
 	pcall(function()
@@ -44,16 +57,6 @@ ContextActionService:BindActionAtPriority(
 	Enum.KeyCode.C
 )
 
-local blur = Lighting:FindFirstChild("BodycamMenuBlur") :: BlurEffect?
-if not blur then
-	blur = Instance.new("BlurEffect")
-	blur.Name = "BodycamMenuBlur"
-	blur.Size = 22
-	blur.Parent = Lighting
-else
-	blur.Size = 22
-end
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "MainMenu"
 gui.IgnoreGuiInset = true
@@ -65,34 +68,78 @@ gui.Parent = player:WaitForChild("PlayerGui")
 local canvas = Instance.new("CanvasGroup")
 canvas.Name = "Canvas"
 canvas.Size = UDim2.fromScale(1, 1)
-canvas.BackgroundColor3 = Color3.fromRGB(5, 6, 7)
-canvas.BackgroundTransparency = 0.08
+canvas.BackgroundColor3 = Color3.fromRGB(34, 38, 41)
 canvas.BorderSizePixel = 0
 canvas.Parent = gui
 
-local gradient = Instance.new("UIGradient")
-gradient.Rotation = 18
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 10, 12)),
-	ColorSequenceKeypoint.new(0.55, Color3.fromRGB(12, 13, 14)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(2, 3, 4)),
-})
-gradient.Parent = canvas
+local operatorView = Instance.new("ViewportFrame")
+operatorView.Name = "OperatorView"
+operatorView.AnchorPoint = Vector2.new(1, 0)
+operatorView.Position = UDim2.fromScale(1, 0)
+operatorView.Size = UDim2.new(0.7, 0, 1, 0)
+operatorView.BackgroundColor3 = Color3.fromRGB(58, 64, 67)
+operatorView.BackgroundTransparency = 0
+operatorView.BorderSizePixel = 0
+operatorView.Ambient = Color3.fromRGB(178, 184, 186)
+operatorView.LightColor = Color3.fromRGB(255, 248, 234)
+operatorView.LightDirection = Vector3.new(-0.65, -0.8, -0.4)
+operatorView.Parent = canvas
 
-local scanline = Instance.new("Frame")
-scanline.Name = "Scanline"
-scanline.Size = UDim2.new(1, 0, 0, 1)
-scanline.Position = UDim2.fromScale(0, 0.17)
-scanline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-scanline.BackgroundTransparency = 0.93
-scanline.BorderSizePixel = 0
-scanline.Parent = canvas
+local worldModel = Instance.new("WorldModel")
+worldModel.Name = "OperatorWorld"
+worldModel.Parent = operatorView
+
+local preview = OperatorAppearance.BuildPreview(worldModel)
+
+local previewFloor = Instance.new("Part")
+previewFloor.Name = "Floor"
+previewFloor.Size = Vector3.new(24, 0.25, 24)
+previewFloor.Position = Vector3.new(0, -0.12, 0)
+previewFloor.Anchored = true
+previewFloor.CanCollide = false
+previewFloor.Color = Color3.fromRGB(47, 51, 53)
+previewFloor.Material = Enum.Material.Concrete
+previewFloor.Parent = worldModel
+
+local previewCamera = Instance.new("Camera")
+previewCamera.Name = "OperatorCamera"
+previewCamera.FieldOfView = 38
+previewCamera.Parent = operatorView
+operatorView.CurrentCamera = previewCamera
+
+local topLight = Instance.new("Part")
+topLight.Name = "LightPanel"
+topLight.Size = Vector3.new(8, 0.15, 3)
+topLight.Position = Vector3.new(0, 7.5, -1.5)
+topLight.Anchored = true
+topLight.CanCollide = false
+topLight.Color = Color3.fromRGB(238, 241, 241)
+topLight.Material = Enum.Material.Neon
+topLight.Parent = worldModel
+
+local leftShade = Instance.new("Frame")
+leftShade.Name = "LeftShade"
+leftShade.Size = UDim2.fromScale(1, 1)
+leftShade.BackgroundColor3 = Color3.fromRGB(10, 12, 13)
+leftShade.BackgroundTransparency = 0
+leftShade.BorderSizePixel = 0
+leftShade.Parent = canvas
+
+local shadeGradient = Instance.new("UIGradient")
+shadeGradient.Color = ColorSequence.new(Color3.new(1, 1, 1))
+shadeGradient.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.02),
+	NumberSequenceKeypoint.new(0.42, 0.12),
+	NumberSequenceKeypoint.new(0.68, 0.62),
+	NumberSequenceKeypoint.new(1, 1),
+})
+shadeGradient.Parent = leftShade
 
 local content = Instance.new("Frame")
 content.Name = "Content"
 content.AnchorPoint = Vector2.new(0, 0.5)
-content.Position = UDim2.new(0, 72, 0.5, 0)
-content.Size = UDim2.new(0, 620, 0, 580)
+content.Position = UDim2.new(0, 64, 0.5, 0)
+content.Size = UDim2.new(0, 610, 0, 610)
 content.BackgroundTransparency = 1
 content.Parent = canvas
 
@@ -100,96 +147,173 @@ local eyebrow = Instance.new("TextLabel")
 eyebrow.BackgroundTransparency = 1
 eyebrow.Size = UDim2.new(1, 0, 0, 28)
 eyebrow.Font = Enum.Font.RobotoMono
-eyebrow.Text = "TACTICAL RESPONSE SYSTEM // DEV BUILD"
-eyebrow.TextColor3 = Color3.fromRGB(145, 150, 154)
-eyebrow.TextSize = 13
+eyebrow.Text = "TACTICAL RESPONSE // CAMPAIGN"
+eyebrow.TextColor3 = SOFT_WHITE
+eyebrow.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+eyebrow.TextStrokeTransparency = 0.5
+eyebrow.TextSize = 14
 eyebrow.TextXAlignment = Enum.TextXAlignment.Left
 eyebrow.Parent = content
 
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
-title.Position = UDim2.fromOffset(0, 34)
-title.Size = UDim2.new(1, 0, 0, 95)
+title.Position = UDim2.fromOffset(0, 30)
+title.Size = UDim2.new(1, 0, 0, 98)
 title.Font = Enum.Font.GothamBlack
 title.Text = "BODYCAM"
-title.TextColor3 = Color3.fromRGB(242, 243, 244)
-title.TextSize = 72
+title.TextColor3 = WHITE
+title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+title.TextStrokeTransparency = 0.28
+title.TextSize = 76
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = content
 
 local divider = Instance.new("Frame")
-divider.Position = UDim2.fromOffset(3, 140)
-divider.Size = UDim2.fromOffset(72, 2)
-divider.BackgroundColor3 = Color3.fromRGB(222, 224, 226)
+divider.Position = UDim2.fromOffset(2, 140)
+divider.Size = UDim2.fromOffset(92, 3)
+divider.BackgroundColor3 = WHITE
 divider.BorderSizePixel = 0
 divider.Parent = content
 
 local sub = Instance.new("TextLabel")
 sub.BackgroundTransparency = 1
-sub.Position = UDim2.fromOffset(0, 154)
+sub.Position = UDim2.fromOffset(0, 160)
 sub.Size = UDim2.new(1, 0, 0, 30)
 sub.Font = Enum.Font.RobotoMono
 sub.Text = "SELECIONE UM MODO"
-sub.TextColor3 = Color3.fromRGB(170, 174, 178)
-sub.TextSize = 14
+sub.TextColor3 = WHITE
+sub.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+sub.TextStrokeTransparency = 0.42
+sub.TextSize = 15
 sub.TextXAlignment = Enum.TextXAlignment.Left
 sub.Parent = content
 
 local menuArea = Instance.new("Frame")
 menuArea.Name = "MenuArea"
 menuArea.Position = UDim2.fromOffset(0, 215)
-menuArea.Size = UDim2.new(1, 0, 0, 310)
+menuArea.Size = UDim2.new(1, 0, 0, 340)
 menuArea.BackgroundTransparency = 1
 menuArea.Parent = content
 
-local function makeMainButton(text: string): TextButton
-	local button = Instance.new("TextButton")
+local function styleButton(button: TextButton, strong: boolean?)
 	button.AutoButtonColor = false
-	button.Size = UDim2.fromOffset(430, 68)
-	button.BackgroundColor3 = Color3.fromRGB(225, 227, 229)
-	button.BackgroundTransparency = 0.92
+	button.BackgroundColor3 = strong and Color3.fromRGB(244, 246, 247) or PANEL
+	button.BackgroundTransparency = strong and 0.08 or 0.18
 	button.BorderSizePixel = 0
-	button.Font = Enum.Font.GothamBold
-	button.Text = "   " .. text
-	button.TextColor3 = Color3.fromRGB(238, 239, 240)
-	button.TextSize = 20
-	button.TextXAlignment = Enum.TextXAlignment.Left
-	button.Parent = menuArea
+	button.TextColor3 = strong and Color3.fromRGB(16, 18, 19) or WHITE
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(200, 203, 206)
-	stroke.Transparency = 0.72
+	stroke.Color = strong and WHITE or BORDER
+	stroke.Transparency = strong and 0.18 or 0.38
 	stroke.Thickness = 1
 	stroke.Parent = button
 
-	local marker = Instance.new("Frame")
-	marker.Size = UDim2.new(0, 3, 1, 0)
-	marker.BackgroundColor3 = Color3.fromRGB(240, 242, 244)
-	marker.BorderSizePixel = 0
-	marker.Parent = button
-
 	button.MouseEnter:Connect(function()
+		if selectionLocked then
+			return
+		end
+
 		TweenService:Create(button, TweenInfo.new(0.12), {
-			BackgroundTransparency = 0.82,
+			BackgroundTransparency = strong and 0 or 0.04,
 		}):Play()
+
 		TweenService:Create(stroke, TweenInfo.new(0.12), {
-			Transparency = 0.35,
+			Transparency = 0.05,
 		}):Play()
 	end)
 
 	button.MouseLeave:Connect(function()
+		if selectionLocked then
+			return
+		end
+
 		TweenService:Create(button, TweenInfo.new(0.12), {
-			BackgroundTransparency = 0.92,
+			BackgroundTransparency = strong and 0.08 or 0.18,
 		}):Play()
+
 		TweenService:Create(stroke, TweenInfo.new(0.12), {
-			Transparency = 0.72,
+			Transparency = strong and 0.18 or 0.38,
 		}):Play()
 	end)
-
-	return button
 end
 
-local campaignButton = makeMainButton("CAMPANHA")
+local campaignButton = Instance.new("TextButton")
+campaignButton.Name = "Campaign"
+campaignButton.Size = UDim2.fromOffset(450, 72)
+campaignButton.Font = Enum.Font.GothamBold
+campaignButton.Text = "   CAMPANHA"
+campaignButton.TextSize = 22
+campaignButton.TextXAlignment = Enum.TextXAlignment.Left
+campaignButton.Parent = menuArea
+styleButton(campaignButton, true)
+
+local campaignMarker = Instance.new("Frame")
+campaignMarker.Size = UDim2.new(0, 4, 1, 0)
+campaignMarker.BackgroundColor3 = Color3.fromRGB(17, 18, 19)
+campaignMarker.BorderSizePixel = 0
+campaignMarker.Parent = campaignButton
+
+local mapPanel = Instance.new("Frame")
+mapPanel.Name = "MapPanel"
+mapPanel.Size = UDim2.fromScale(1, 1)
+mapPanel.BackgroundTransparency = 1
+mapPanel.Visible = false
+mapPanel.Parent = menuArea
+
+local mapTitle = Instance.new("TextLabel")
+mapTitle.BackgroundTransparency = 1
+mapTitle.Size = UDim2.new(1, 0, 0, 30)
+mapTitle.Font = Enum.Font.RobotoMono
+mapTitle.Text = "MAPAS DISPONÍVEIS"
+mapTitle.TextColor3 = WHITE
+mapTitle.TextSize = 14
+mapTitle.TextXAlignment = Enum.TextXAlignment.Left
+mapTitle.Parent = mapPanel
+
+local mapButton = Instance.new("TextButton")
+mapButton.Name = "COMPLEX_01"
+mapButton.Position = UDim2.fromOffset(0, 48)
+mapButton.Size = UDim2.fromOffset(525, 118)
+mapButton.Font = Enum.Font.GothamBold
+mapButton.Text = "   COMPLEXO INDUSTRIAL"
+mapButton.TextSize = 21
+mapButton.TextXAlignment = Enum.TextXAlignment.Left
+mapButton.Parent = mapPanel
+styleButton(mapButton, false)
+
+local mapCode = Instance.new("TextLabel")
+mapCode.AnchorPoint = Vector2.new(1, 0)
+mapCode.Position = UDim2.new(1, -18, 0, 17)
+mapCode.Size = UDim2.fromOffset(210, 24)
+mapCode.BackgroundTransparency = 1
+mapCode.Font = Enum.Font.RobotoMono
+mapCode.Text = "SETOR 01 // DISPONÍVEL"
+mapCode.TextColor3 = SOFT_WHITE
+mapCode.TextSize = 11
+mapCode.TextXAlignment = Enum.TextXAlignment.Right
+mapCode.Parent = mapButton
+
+local mapDesc = Instance.new("TextLabel")
+mapDesc.Position = UDim2.fromOffset(18, 69)
+mapDesc.Size = UDim2.new(1, -36, 0, 30)
+mapDesc.BackgroundTransparency = 1
+mapDesc.Font = Enum.Font.RobotoMono
+mapDesc.Text = "ÁREA DE PREPARAÇÃO + COMPLEXO DE TESTE"
+mapDesc.TextColor3 = MUTED
+mapDesc.TextSize = 11
+mapDesc.TextXAlignment = Enum.TextXAlignment.Left
+mapDesc.Parent = mapButton
+
+local mapBack = Instance.new("TextButton")
+mapBack.Position = UDim2.fromOffset(0, 205)
+mapBack.Size = UDim2.fromOffset(130, 32)
+mapBack.BackgroundTransparency = 1
+mapBack.Font = Enum.Font.RobotoMono
+mapBack.Text = "< VOLTAR"
+mapBack.TextColor3 = WHITE
+mapBack.TextSize = 13
+mapBack.TextXAlignment = Enum.TextXAlignment.Left
+mapBack.Parent = mapPanel
 
 local difficultyPanel = Instance.new("Frame")
 difficultyPanel.Name = "DifficultyPanel"
@@ -202,15 +326,15 @@ local difficultyTitle = Instance.new("TextLabel")
 difficultyTitle.BackgroundTransparency = 1
 difficultyTitle.Size = UDim2.new(1, 0, 0, 30)
 difficultyTitle.Font = Enum.Font.RobotoMono
-difficultyTitle.Text = "DIFICULDADE DA CAMPANHA"
-difficultyTitle.TextColor3 = Color3.fromRGB(201, 204, 207)
+difficultyTitle.Text = "DIFICULDADE // COMPLEXO INDUSTRIAL"
+difficultyTitle.TextColor3 = WHITE
 difficultyTitle.TextSize = 14
 difficultyTitle.TextXAlignment = Enum.TextXAlignment.Left
 difficultyTitle.Parent = difficultyPanel
 
 local choices = Instance.new("Frame")
 choices.Position = UDim2.fromOffset(0, 48)
-choices.Size = UDim2.new(1, 0, 0, 190)
+choices.Size = UDim2.new(1, 0, 0, 205)
 choices.BackgroundTransparency = 1
 choices.Parent = difficultyPanel
 
@@ -220,138 +344,145 @@ list.FillDirection = Enum.FillDirection.Vertical
 list.Parent = choices
 
 local difficultyButtons: {TextButton} = {}
-local selectionLocked = false
 
 local function makeDifficulty(label: string, code: string, description: string)
 	local button = Instance.new("TextButton")
 	button.Name = code
-	button.AutoButtonColor = false
-	button.Size = UDim2.fromOffset(520, 55)
-	button.BackgroundColor3 = Color3.fromRGB(232, 234, 236)
-	button.BackgroundTransparency = 0.94
-	button.BorderSizePixel = 0
+	button.Size = UDim2.fromOffset(525, 58)
 	button.Font = Enum.Font.GothamBold
 	button.Text = "   " .. label
-	button.TextColor3 = Color3.fromRGB(238, 239, 240)
-	button.TextSize = 17
+	button.TextSize = 18
 	button.TextXAlignment = Enum.TextXAlignment.Left
 	button.Parent = choices
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(180, 184, 188)
-	stroke.Transparency = 0.78
-	stroke.Parent = button
+	styleButton(button, false)
 
 	local desc = Instance.new("TextLabel")
 	desc.AnchorPoint = Vector2.new(1, 0.5)
-	desc.Position = UDim2.new(1, -16, 0.5, 0)
+	desc.Position = UDim2.new(1, -17, 0.5, 0)
 	desc.Size = UDim2.fromOffset(310, 30)
 	desc.BackgroundTransparency = 1
 	desc.Font = Enum.Font.RobotoMono
 	desc.Text = description
-	desc.TextColor3 = Color3.fromRGB(135, 140, 145)
+	desc.TextColor3 = SOFT_WHITE
 	desc.TextSize = 11
 	desc.TextXAlignment = Enum.TextXAlignment.Right
 	desc.Parent = button
-
-	button.MouseEnter:Connect(function()
-		if selectionLocked then
-			return
-		end
-		TweenService:Create(button, TweenInfo.new(0.1), {
-			BackgroundTransparency = 0.84,
-		}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.1), {
-			Transparency = 0.35,
-		}):Play()
-	end)
-
-	button.MouseLeave:Connect(function()
-		if selectionLocked then
-			return
-		end
-		TweenService:Create(button, TweenInfo.new(0.1), {
-			BackgroundTransparency = 0.94,
-		}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.1), {
-			Transparency = 0.78,
-		}):Play()
-	end)
 
 	table.insert(difficultyButtons, button)
 	return button
 end
 
-local easy = makeDifficulty("FÁCIL", "EASY", "PARA CONHECER A CAMPANHA")
+local easy = makeDifficulty("FÁCIL", "EASY", "FOCO NA HISTÓRIA")
 local normal = makeDifficulty("NORMAL", "NORMAL", "EXPERIÊNCIA PADRÃO")
 local hard = makeDifficulty("DIFÍCIL", "HARD", "MENOS MARGEM PARA ERRO")
 
-local back = Instance.new("TextButton")
-back.AutoButtonColor = false
-back.Position = UDim2.fromOffset(0, 260)
-back.Size = UDim2.fromOffset(120, 32)
-back.BackgroundTransparency = 1
-back.Font = Enum.Font.RobotoMono
-back.Text = "< VOLTAR"
-back.TextColor3 = Color3.fromRGB(145, 150, 154)
-back.TextSize = 13
-back.TextXAlignment = Enum.TextXAlignment.Left
-back.Parent = difficultyPanel
+local difficultyBack = Instance.new("TextButton")
+difficultyBack.Position = UDim2.fromOffset(0, 264)
+difficultyBack.Size = UDim2.fromOffset(130, 32)
+difficultyBack.BackgroundTransparency = 1
+difficultyBack.Font = Enum.Font.RobotoMono
+difficultyBack.Text = "< VOLTAR"
+difficultyBack.TextColor3 = WHITE
+difficultyBack.TextSize = 13
+difficultyBack.TextXAlignment = Enum.TextXAlignment.Left
+difficultyBack.Parent = difficultyPanel
 
 local footer = Instance.new("TextLabel")
 footer.AnchorPoint = Vector2.new(0, 1)
-footer.Position = UDim2.new(0, 72, 1, -34)
-footer.Size = UDim2.new(0, 700, 0, 24)
+footer.Position = UDim2.new(0, 64, 1, -28)
+footer.Size = UDim2.new(0, 620, 0, 22)
 footer.BackgroundTransparency = 1
 footer.Font = Enum.Font.RobotoMono
-footer.Text = "BODYCAM // CAMPAIGN PROTOTYPE"
-footer.TextColor3 = Color3.fromRGB(94, 98, 102)
+footer.Text = "BODYCAM // PROTOTYPE BUILD"
+footer.TextColor3 = SOFT_WHITE
+footer.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+footer.TextStrokeTransparency = 0.55
 footer.TextSize = 11
 footer.TextXAlignment = Enum.TextXAlignment.Left
 footer.Parent = canvas
 
 local status = Instance.new("TextLabel")
 status.AnchorPoint = Vector2.new(1, 1)
-status.Position = UDim2.new(1, -42, 1, -34)
-status.Size = UDim2.fromOffset(420, 24)
+status.Position = UDim2.new(1, -34, 1, -28)
+status.Size = UDim2.fromOffset(480, 22)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.RobotoMono
-status.Text = "SYSTEM READY"
-status.TextColor3 = Color3.fromRGB(105, 110, 114)
+status.Text = "OPERATOR READY // SYSTEM ONLINE"
+status.TextColor3 = WHITE
+status.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+status.TextStrokeTransparency = 0.5
 status.TextSize = 11
 status.TextXAlignment = Enum.TextXAlignment.Right
 status.Parent = canvas
 
-local function showDifficulty()
-	campaignButton.Visible = false
-	sub.Text = "CAMPANHA"
-	difficultyPanel.Visible = true
-end
+local orbitAngle = math.pi + 0.28
+local baseHeadOffset = preview.Torso.CFrame:ToObjectSpace(preview.Head.CFrame)
+
+renderConnection = RunService.RenderStepped:Connect(function(dt)
+	orbitAngle += dt * math.rad(2.4)
+
+	local focus = Vector3.new(0, 2.85, 0)
+	local radius = 8.4
+	local cameraPosition = Vector3.new(
+		math.sin(orbitAngle) * radius,
+		3.55,
+		math.cos(orbitAngle) * radius
+	)
+
+	previewCamera.CFrame = CFrame.lookAt(cameraPosition, focus + Vector3.new(0, 0.25, 0))
+
+	local viewportSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+	local mouse = UserInputService:GetMouseLocation()
+
+	local nx = math.clamp(((mouse.X / math.max(viewportSize.X, 1)) - 0.5) * 2, -1, 1)
+	local ny = math.clamp(((mouse.Y / math.max(viewportSize.Y, 1)) - 0.5) * 2, -1, 1)
+
+	local yaw = math.rad(-22 * nx)
+	local pitch = math.rad(10 * ny)
+
+	preview.Head.CFrame = preview.Torso.CFrame
+		* CFrame.new(baseHeadOffset.Position)
+		* CFrame.Angles(pitch, yaw, 0)
+end)
 
 local function showModes()
+	mapPanel.Visible = false
 	difficultyPanel.Visible = false
 	campaignButton.Visible = true
 	sub.Text = "SELECIONE UM MODO"
+end
+
+local function showMaps()
+	campaignButton.Visible = false
+	difficultyPanel.Visible = false
+	mapPanel.Visible = true
+	sub.Text = "CAMPANHA // SELEÇÃO DE MAPA"
+end
+
+local function showDifficulty()
+	campaignButton.Visible = false
+	mapPanel.Visible = false
+	difficultyPanel.Visible = true
+	sub.Text = "CAMPANHA // " .. selectedMap
 end
 
 local function closeMenu()
 	ContextActionService:UnbindAction("BodycamMenuMovementLock")
 	setCoreGui(true)
 
-	local fade = TweenService:Create(canvas, TweenInfo.new(0.35, Enum.EasingStyle.Quad), {
-		GroupTransparency = 1,
-	})
-	local blurTween = TweenService:Create(blur, TweenInfo.new(0.35, Enum.EasingStyle.Quad), {
-		Size = 0,
-	})
+	if renderConnection then
+		renderConnection:Disconnect()
+		renderConnection = nil
+	end
 
+	local fade = TweenService:Create(
+		canvas,
+		TweenInfo.new(0.4, Enum.EasingStyle.Quad),
+		{GroupTransparency = 1}
+	)
 	fade:Play()
-	blurTween:Play()
 	fade.Completed:Wait()
 
-	if blur and blur.Parent then
-		blur:Destroy()
-	end
 	gui:Destroy()
 end
 
@@ -364,10 +495,10 @@ local function chooseDifficulty(code: string)
 	for _, button in difficultyButtons do
 		button.Active = false
 	end
-	back.Active = false
+	difficultyBack.Active = false
 
-	status.Text = "INICIANDO CAMPANHA // " .. code
-	startCampaign:FireServer(code)
+	status.Text = "CARREGANDO // " .. selectedMap .. " // " .. code
+	startCampaign:FireServer(selectedMap, code)
 
 	local startedAt = os.clock()
 	while player:GetAttribute("CampaignStarted") ~= true and os.clock() - startedAt < 4 do
@@ -380,16 +511,23 @@ local function chooseDifficulty(code: string)
 		for _, button in difficultyButtons do
 			button.Active = true
 		end
-		back.Active = true
+		difficultyBack.Active = true
 		return
 	end
 
-	status.Text = "CAMPANHA INICIADA"
+	status.Text = "OPERAÇÃO INICIADA"
 	closeMenu()
 end
 
-campaignButton.Activated:Connect(showDifficulty)
-back.Activated:Connect(showModes)
+campaignButton.Activated:Connect(showMaps)
+
+mapButton.Activated:Connect(function()
+	selectedMap = "COMPLEX_01"
+	showDifficulty()
+end)
+
+mapBack.Activated:Connect(showModes)
+difficultyBack.Activated:Connect(showMaps)
 
 easy.Activated:Connect(function()
 	chooseDifficulty("EASY")
