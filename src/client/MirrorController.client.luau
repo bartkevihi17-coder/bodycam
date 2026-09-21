@@ -9,7 +9,12 @@ local function waitForMirror(): BasePart?
 		return nil
 	end
 
-	return map:WaitForChild("MirrorGlass", 10) :: BasePart?
+	local equipmentArea = map:WaitForChild("EquipmentArea", 10)
+	if not equipmentArea then
+		return nil
+	end
+
+	return equipmentArea:WaitForChild("MirrorGlass", 10) :: BasePart?
 end
 
 local mirror = waitForMirror()
