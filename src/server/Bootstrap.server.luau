@@ -11,11 +11,18 @@ if not remotes then
 	remotes.Parent = ReplicatedStorage
 end
 
-if not remotes:FindFirstChild("FireWeapon") then
+local function ensureRemote(name: string)
+	if remotes:FindFirstChild(name) then
+		return
+	end
+
 	local remote = Instance.new("RemoteEvent")
-	remote.Name = "FireWeapon"
+	remote.Name = name
 	remote.Parent = remotes
 end
+
+ensureRemote("FireWeapon")
+ensureRemote("StartCampaign")
 
 if not StarterPack:FindFirstChild(Config.Weapon.Name) then
 	local tool = Instance.new("Tool")
