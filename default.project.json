@@ -1,0 +1,23 @@
+{
+  "name": "bodycam",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "BodycamServer": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "BodycamClient": {
+          "$path": "src/client"
+        }
+      }
+    }
+  }
+}
