@@ -3,8 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local OperatorAppearance = require(
-	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("OperatorAppearance")
+local OperatorPreview = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("OperatorPreview")
 )
 
 local function waitForMirror(): BasePart?
@@ -52,7 +52,7 @@ local worldModel = Instance.new("WorldModel")
 worldModel.Name = "ReflectionWorld"
 worldModel.Parent = viewport
 
-local preview = OperatorAppearance.BuildPreview(worldModel)
+local preview = OperatorPreview.Build(worldModel)
 
 local mirrorCamera = Instance.new("Camera")
 mirrorCamera.Name = "MirrorCamera"
@@ -64,7 +64,6 @@ mirrorCamera.CFrame = CFrame.lookAt(
 mirrorCamera.Parent = viewport
 viewport.CurrentCamera = mirrorCamera
 
-local baseHeadOffset = preview.Torso.CFrame:ToObjectSpace(preview.Head.CFrame)
 local updateAccumulator = 0
 local wasNear = false
 local entryYaw = 0
@@ -123,7 +122,5 @@ RunService.RenderStepped:Connect(function(dt)
 		math.rad(24)
 	)
 
-	preview.Head.CFrame = preview.Torso.CFrame
-		* CFrame.new(baseHeadOffset.Position)
-		* CFrame.Angles(-pitch, -yawDelta, 0)
+	preview:SetLook(-pitch, -yawDelta)
 end)
