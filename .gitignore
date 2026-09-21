@@ -5,3 +5,4 @@ Thumbs.db
 *.rbxl.lock
 *.rbxlx.lock
 sourcemap.json
+.tools/
