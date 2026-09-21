@@ -11,6 +11,10 @@ local validDifficulties = {
 	HARD = true,
 }
 
+local validMaps = {
+	COMPLEX_01 = true,
+}
+
 local function setupPlayer(player: Player)
 	if player:GetAttribute("CampaignStarted") == nil then
 		player:SetAttribute("CampaignStarted", false)
@@ -18,6 +22,10 @@ local function setupPlayer(player: Player)
 
 	if player:GetAttribute("CampaignDifficulty") == nil then
 		player:SetAttribute("CampaignDifficulty", "NONE")
+	end
+
+	if player:GetAttribute("CampaignMap") == nil then
+		player:SetAttribute("CampaignMap", "NONE")
 	end
 end
 
@@ -27,8 +35,12 @@ end
 
 Players.PlayerAdded:Connect(setupPlayer)
 
-startCampaign.OnServerEvent:Connect(function(player: Player, difficulty: string)
+startCampaign.OnServerEvent:Connect(function(player: Player, mapCode: string, difficulty: string)
 	if player:GetAttribute("CampaignStarted") == true then
+		return
+	end
+
+	if typeof(mapCode) ~= "string" or not validMaps[mapCode] then
 		return
 	end
 
@@ -36,6 +48,7 @@ startCampaign.OnServerEvent:Connect(function(player: Player, difficulty: string)
 		return
 	end
 
+	player:SetAttribute("CampaignMap", mapCode)
 	player:SetAttribute("CampaignDifficulty", difficulty)
 	player:SetAttribute("CampaignStarted", true)
 end)
