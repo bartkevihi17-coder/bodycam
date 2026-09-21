@@ -39,7 +39,7 @@ local function newPart(
 	part.CanQuery = false
 	part.CanTouch = false
 	part.Massless = true
-	part.CastShadow = true
+	part.CastShadow = false
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part.CFrame = target.CFrame * offset
