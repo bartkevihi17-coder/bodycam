@@ -68,7 +68,7 @@ gui.Parent = player:WaitForChild("PlayerGui")
 local canvas = Instance.new("CanvasGroup")
 canvas.Name = "Canvas"
 canvas.Size = UDim2.fromScale(1, 1)
-canvas.BackgroundColor3 = Color3.fromRGB(34, 38, 41)
+canvas.BackgroundColor3 = Color3.fromRGB(46, 51, 54)
 canvas.BorderSizePixel = 0
 canvas.Parent = gui
 
@@ -77,10 +77,10 @@ operatorView.Name = "OperatorView"
 operatorView.AnchorPoint = Vector2.new(1, 0)
 operatorView.Position = UDim2.fromScale(1, 0)
 operatorView.Size = UDim2.new(0.7, 0, 1, 0)
-operatorView.BackgroundColor3 = Color3.fromRGB(58, 64, 67)
+operatorView.BackgroundColor3 = Color3.fromRGB(74, 80, 83)
 operatorView.BackgroundTransparency = 0
 operatorView.BorderSizePixel = 0
-operatorView.Ambient = Color3.fromRGB(178, 184, 186)
+operatorView.Ambient = Color3.fromRGB(205, 209, 210)
 operatorView.LightColor = Color3.fromRGB(255, 248, 234)
 operatorView.LightDirection = Vector3.new(-0.65, -0.8, -0.4)
 operatorView.Parent = canvas
@@ -121,7 +121,7 @@ local leftShade = Instance.new("Frame")
 leftShade.Name = "LeftShade"
 leftShade.Size = UDim2.fromScale(1, 1)
 leftShade.BackgroundColor3 = Color3.fromRGB(10, 12, 13)
-leftShade.BackgroundTransparency = 0
+leftShade.BackgroundTransparency = 0.1
 leftShade.BorderSizePixel = 0
 leftShade.Parent = canvas
 
@@ -416,10 +416,18 @@ status.TextXAlignment = Enum.TextXAlignment.Right
 status.Parent = canvas
 
 local orbitAngle = math.pi + 0.28
+local previewAccumulator = 0
 local baseHeadOffset = preview.Torso.CFrame:ToObjectSpace(preview.Head.CFrame)
 
 renderConnection = RunService.RenderStepped:Connect(function(dt)
-	orbitAngle += dt * math.rad(2.4)
+	previewAccumulator += dt
+	if previewAccumulator < (1 / 30) then
+		return
+	end
+
+	local step = previewAccumulator
+	previewAccumulator = 0
+	orbitAngle += step * math.rad(2.4)
 
 	local focus = Vector3.new(0, 2.85, 0)
 	local radius = 8.4
@@ -438,7 +446,7 @@ renderConnection = RunService.RenderStepped:Connect(function(dt)
 	local ny = math.clamp(((mouse.Y / math.max(viewportSize.Y, 1)) - 0.5) * 2, -1, 1)
 
 	local yaw = math.rad(-22 * nx)
-	local pitch = math.rad(10 * ny)
+	local pitch = math.rad(-10 * ny)
 
 	preview.Head.CFrame = preview.Torso.CFrame
 		* CFrame.new(baseHeadOffset.Position)
