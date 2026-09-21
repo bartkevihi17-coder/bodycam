@@ -21,6 +21,10 @@ local difficultyNames = {
 	HARD = "DIFICIL",
 }
 
+local mapNames = {
+	COMPLEX_01 = "COMPLEXO INDUSTRIAL",
+}
+
 local function makeHud()
 	if player.PlayerGui:FindFirstChild("BodycamHUD") then
 		return
@@ -63,10 +67,14 @@ local function makeHud()
 		while gui.Parent do
 			local now = DateTime.now()
 			local difficulty = player:GetAttribute("CampaignDifficulty")
+			local mapCode = player:GetAttribute("CampaignMap")
 			local difficultyName = difficultyNames[difficulty] or "UNKNOWN"
+			local mapName = mapNames[mapCode] or "UNKNOWN"
 
 			status.Text = now:FormatLocalTime("DD/MM/YYYY  HH:mm:ss", "pt-br")
-				.. "\nBODYCAM // CAMPANHA // "
+				.. "\nBODYCAM // "
+				.. mapName
+				.. " // "
 				.. difficultyName
 
 			task.wait(0.25)
