@@ -4,7 +4,7 @@ local Lighting = game:GetService("Lighting")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
-local MAP_VERSION = 2
+local MAP_VERSION = 3
 
 local remotes = ReplicatedStorage:FindFirstChild("BodycamRemotes")
 if not remotes then
@@ -44,6 +44,7 @@ local function createWeaponPart(
 	part.CanQuery = false
 	part.CanTouch = false
 	part.Massless = true
+	part.CastShadow = false
 	part.CFrame = handle.CFrame * offset
 	part.Parent = tool
 
@@ -145,7 +146,7 @@ if not StarterPack:FindFirstChild(Config.Weapon.Name) then
 	)
 	muzzle.Shape = Enum.PartType.Cylinder
 
-	slide.CastShadow = true
+	slide.CastShadow = false
 	tool.Parent = StarterPack
 end
 
@@ -282,7 +283,7 @@ if not oldMap then
 	mirrorPointLight.Brightness = 1.7
 	mirrorPointLight.Range = 16
 	mirrorPointLight.Color = Color3.fromRGB(235, 239, 231)
-	mirrorPointLight.Shadows = true
+	mirrorPointLight.Shadows = false
 	mirrorPointLight.Parent = mirrorLight
 
 	local spawn = Instance.new("SpawnLocation")
@@ -298,20 +299,20 @@ if not oldMap then
 	spawn.CanCollide = false
 	spawn.Parent = readyArea
 
-	for index = -4, 4 do
+	for index = -2, 2 do
 		local fixture = makePart(
 			"CeilingLight_" .. tostring(index),
-			Vector3.new(5, 0.2, 1),
-			Vector3.new(index * 11, 9.6, 0),
+			Vector3.new(7, 0.2, 1),
+			Vector3.new(index * 22, 9.6, 0),
 			Color3.fromRGB(235, 239, 247),
 			Enum.Material.Neon
 		)
 
 		local light = Instance.new("PointLight")
-		light.Brightness = 1.45
-		light.Range = 24
+		light.Brightness = 1.7
+		light.Range = 31
 		light.Color = Color3.fromRGB(214, 222, 236)
-		light.Shadows = true
+		light.Shadows = false
 		light.Parent = fixture
 	end
 end
@@ -342,6 +343,7 @@ if not bloom then
 	bloom.Parent = Lighting
 end
 
-bloom.Intensity = 0.12
+bloom.Enabled = false
+bloom.Intensity = 0
 bloom.Size = 18
 bloom.Threshold = 1.9
