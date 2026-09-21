@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local shared = ReplicatedStorage:WaitForChild("Shared")
-local OperatorAppearance = require(shared:WaitForChild("OperatorAppearance"))
+local OperatorPreview = require(shared:WaitForChild("OperatorPreview"))
 
 local startCampaign = ReplicatedStorage
 	:WaitForChild("BodycamRemotes")
@@ -89,7 +89,7 @@ local worldModel = Instance.new("WorldModel")
 worldModel.Name = "OperatorWorld"
 worldModel.Parent = operatorView
 
-local preview = OperatorAppearance.BuildPreview(worldModel)
+local preview = OperatorPreview.Build(worldModel)
 
 local previewFloor = Instance.new("Part")
 previewFloor.Name = "Floor"
@@ -407,7 +407,9 @@ status.Position = UDim2.new(1, -34, 1, -28)
 status.Size = UDim2.fromOffset(480, 22)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.RobotoMono
-status.Text = "OPERATOR READY // SYSTEM ONLINE"
+status.Text = OperatorPreview.HasImportedOperator()
+	and "OPERATOR RIGGED // SYSTEM ONLINE"
+	or "OPERATOR FALLBACK // SYSTEM ONLINE"
 status.TextColor3 = WHITE
 status.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 status.TextStrokeTransparency = 0.5
@@ -417,7 +419,6 @@ status.Parent = canvas
 
 local orbitAngle = math.pi + 0.28
 local previewAccumulator = 0
-local baseHeadOffset = preview.Torso.CFrame:ToObjectSpace(preview.Head.CFrame)
 
 renderConnection = RunService.RenderStepped:Connect(function(dt)
 	previewAccumulator += dt
@@ -448,9 +449,7 @@ renderConnection = RunService.RenderStepped:Connect(function(dt)
 	local yaw = math.rad(-22 * nx)
 	local pitch = math.rad(-10 * ny)
 
-	preview.Head.CFrame = preview.Torso.CFrame
-		* CFrame.new(baseHeadOffset.Position)
-		* CFrame.Angles(pitch, yaw, 0)
+	preview:SetLook(pitch, yaw)
 end)
 
 local function showModes()
