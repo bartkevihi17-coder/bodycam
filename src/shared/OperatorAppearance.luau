@@ -136,8 +136,8 @@ local function addR6Body(character: Model, cosmetics: Folder)
 	visualShell(cosmetics, leftLeg, "LeftTrouser", Vector3.new(1.05, 2.02, 1.05), COLORS.UniformDark, Enum.Material.Fabric)
 	visualShell(cosmetics, rightLeg, "RightTrouser", Vector3.new(1.05, 2.02, 1.05), COLORS.UniformDark, Enum.Material.Fabric)
 
-	visualShell(cosmetics, leftLeg, "LeftBoot", Vector3.new(1.08, 0.55, 1.22), COLORS.Boot, Enum.Material.Leather, CFrame.new(0, -0.73, -0.08))
-	visualShell(cosmetics, rightLeg, "RightBoot", Vector3.new(1.08, 0.55, 1.22), COLORS.Boot, Enum.Material.Leather, CFrame.new(0, -0.73, -0.08))
+	visualShell(cosmetics, leftLeg, "LeftBoot", Vector3.new(1.08, 0.55, 1.22), COLORS.Boot, Enum.Material.SmoothPlastic, CFrame.new(0, -0.73, -0.08))
+	visualShell(cosmetics, rightLeg, "RightBoot", Vector3.new(1.08, 0.55, 1.22), COLORS.Boot, Enum.Material.SmoothPlastic, CFrame.new(0, -0.73, -0.08))
 
 	visualShell(cosmetics, leftLeg, "LeftKneePad", Vector3.new(0.72, 0.55, 0.16), COLORS.VestDark, Enum.Material.SmoothPlastic, CFrame.new(0, 0.05, -0.58))
 	visualShell(cosmetics, rightLeg, "RightKneePad", Vector3.new(0.72, 0.55, 0.16), COLORS.VestDark, Enum.Material.SmoothPlastic, CFrame.new(0, 0.05, -0.58))
@@ -183,8 +183,8 @@ local function addR15Body(character: Model, cosmetics: Folder)
 	visualShell(cosmetics, character:FindFirstChild("LeftHand") :: BasePart?, "LeftHandSkin", Vector3.new(1, 0.45, 1), COLORS.Skin, Enum.Material.SmoothPlastic)
 	visualShell(cosmetics, character:FindFirstChild("RightHand") :: BasePart?, "RightHandSkin", Vector3.new(1, 0.45, 1), COLORS.Skin, Enum.Material.SmoothPlastic)
 
-	visualShell(cosmetics, character:FindFirstChild("LeftFoot") :: BasePart?, "LeftBoot", Vector3.new(1.05, 0.55, 1.25), COLORS.Boot, Enum.Material.Leather)
-	visualShell(cosmetics, character:FindFirstChild("RightFoot") :: BasePart?, "RightBoot", Vector3.new(1.05, 0.55, 1.25), COLORS.Boot, Enum.Material.Leather)
+	visualShell(cosmetics, character:FindFirstChild("LeftFoot") :: BasePart?, "LeftBoot", Vector3.new(1.05, 0.55, 1.25), COLORS.Boot, Enum.Material.SmoothPlastic)
+	visualShell(cosmetics, character:FindFirstChild("RightFoot") :: BasePart?, "RightBoot", Vector3.new(1.05, 0.55, 1.25), COLORS.Boot, Enum.Material.SmoothPlastic)
 
 	visualShell(cosmetics, character:FindFirstChild("LeftLowerLeg") :: BasePart?, "LeftKneePad", Vector3.new(0.72, 0.55, 0.16), COLORS.VestDark, Enum.Material.SmoothPlastic, CFrame.new(0, 0.35, -0.56))
 	visualShell(cosmetics, character:FindFirstChild("RightLowerLeg") :: BasePart?, "RightKneePad", Vector3.new(0.72, 0.55, 0.16), COLORS.VestDark, Enum.Material.SmoothPlastic, CFrame.new(0, 0.35, -0.56))
