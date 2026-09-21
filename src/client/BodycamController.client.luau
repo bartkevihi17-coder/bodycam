@@ -13,8 +13,19 @@ local root: BasePart?
 local sprinting = false
 local crouching = false
 local baseHipHeight = 0
+local gameStarted = player:GetAttribute("CampaignStarted") == true
+
+local difficultyNames = {
+	EASY = "FACIL",
+	NORMAL = "NORMAL",
+	HARD = "DIFICIL",
+}
 
 local function makeHud()
+	if player.PlayerGui:FindFirstChild("BodycamHUD") then
+		return
+	end
+
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "BodycamHUD"
 	gui.IgnoreGuiInset = true
@@ -38,7 +49,7 @@ local function makeHud()
 	status.Name = "Status"
 	status.AnchorPoint = Vector2.new(1, 0)
 	status.Position = UDim2.new(1, -28, 0, 22)
-	status.Size = UDim2.fromOffset(420, 56)
+	status.Size = UDim2.fromOffset(440, 56)
 	status.BackgroundTransparency = 1
 	status.Font = Enum.Font.RobotoMono
 	status.TextSize = 16
@@ -51,8 +62,13 @@ local function makeHud()
 	task.spawn(function()
 		while gui.Parent do
 			local now = DateTime.now()
+			local difficulty = player:GetAttribute("CampaignDifficulty")
+			local difficultyName = difficultyNames[difficulty] or "UNKNOWN"
+
 			status.Text = now:FormatLocalTime("DD/MM/YYYY  HH:mm:ss", "pt-br")
-				.. "\nBODYCAM DEV / SYNC OK"
+				.. "\nBODYCAM // CAMPANHA // "
+				.. difficultyName
+
 			task.wait(0.25)
 		end
 	end)
@@ -62,6 +78,14 @@ local function applyMovement()
 	if not humanoid then
 		return
 	end
+
+	if not gameStarted then
+		humanoid.WalkSpeed = 0
+		humanoid.AutoRotate = false
+		return
+	end
+
+	humanoid.AutoRotate = true
 
 	if crouching then
 		humanoid.WalkSpeed = Config.Movement.CrouchSpeed
@@ -75,31 +99,44 @@ local function applyMovement()
 	end
 end
 
+local function setGameStarted(started: boolean)
+	gameStarted = started
+
+	if started then
+		player.CameraMode = Enum.CameraMode.LockFirstPerson
+		UserInputService.MouseIconEnabled = false
+		makeHud()
+	else
+		player.CameraMode = Enum.CameraMode.Classic
+		UserInputService.MouseIconEnabled = true
+	end
+
+	applyMovement()
+end
+
 local function onCharacterAdded(newCharacter: Model)
 	character = newCharacter
 	humanoid = newCharacter:WaitForChild("Humanoid") :: Humanoid
 	root = newCharacter:WaitForChild("HumanoidRootPart") :: BasePart
 	baseHipHeight = humanoid.HipHeight
 
-	player.CameraMode = Enum.CameraMode.LockFirstPerson
-	UserInputService.MouseIconEnabled = false
-
 	sprinting = false
 	crouching = false
-	applyMovement()
+	setGameStarted(player:GetAttribute("CampaignStarted") == true)
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
+
 if player.Character then
 	onCharacterAdded(player.Character)
 end
 
-if not player.PlayerGui:FindFirstChild("BodycamHUD") then
-	makeHud()
-end
+player:GetAttributeChangedSignal("CampaignStarted"):Connect(function()
+	setGameStarted(player:GetAttribute("CampaignStarted") == true)
+end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then
+	if gameProcessed or not gameStarted then
 		return
 	end
 
@@ -117,6 +154,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
+	if not gameStarted then
+		return
+	end
+
 	if input.KeyCode == Enum.KeyCode.LeftShift then
 		sprinting = false
 		applyMovement()
@@ -127,7 +168,7 @@ local elapsed = 0
 local smoothSway = Vector2.zero
 
 RunService:BindToRenderStep("BodycamCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
-	if not humanoid or not root or humanoid.Health <= 0 then
+	if not gameStarted or not humanoid or not root or humanoid.Health <= 0 then
 		return
 	end
 
