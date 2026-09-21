@@ -476,7 +476,8 @@ end
 
 local function closeMenu()
 	ContextActionService:UnbindAction("BodycamMenuMovementLock")
-	setCoreGui(true)
+	-- The stock Roblox hotbar stays disabled; WeaponSwitcher owns the in-game loadout UI.
+	setCoreGui(false)
 
 	if renderConnection then
 		renderConnection:Disconnect()
