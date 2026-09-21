@@ -139,12 +139,11 @@ if not StarterPack:FindFirstChild(Config.Weapon.Name) then
 		handle,
 		"Muzzle",
 		Vector3.new(0.22, 0.22, 0.05),
-		CFrame.new(0, 0.52, -1.42),
+		CFrame.new(0, 0.52, -1.42) * CFrame.Angles(0, math.rad(90), 0),
 		Color3.fromRGB(8, 9, 9),
 		Enum.Material.Metal
 	)
 	muzzle.Shape = Enum.PartType.Cylinder
-	muzzle.CFrame = muzzle.CFrame * CFrame.Angles(0, math.rad(90), 0)
 
 	slide.CastShadow = true
 	tool.Parent = StarterPack
