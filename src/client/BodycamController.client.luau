@@ -52,7 +52,7 @@ local function makeHud()
 		while gui.Parent do
 			local now = DateTime.now()
 			status.Text = now:FormatLocalTime("DD/MM/YYYY  HH:mm:ss", "pt-br")
-				.. "\nBODYCAM DEV / UNIT 01"
+				.. "\nBODYCAM DEV / SYNC OK"
 			task.wait(0.25)
 		end
 	end)
