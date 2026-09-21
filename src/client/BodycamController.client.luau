@@ -15,7 +15,8 @@ local crouching = false
 local baseHipHeight = 0
 local gameStarted = player:GetAttribute("CampaignStarted") == true
 
-local firstPersonParts: {BasePart} = {}
+local firstPersonShowParts: {BasePart} = {}
+local firstPersonHideParts: {BasePart} = {}
 local rebuildPartsQueued = false
 
 local difficultyNames = {
@@ -28,41 +29,60 @@ local mapNames = {
 	COMPLEX_01 = "COMPLEXO INDUSTRIAL",
 }
 
-local visibleNameTokens = {
-	"arm",
+local firstPersonVisibleTokens = {
+	"lowerarm",
+	"forearm",
 	"hand",
 	"palm",
 	"finger",
 	"thumb",
-	"sleeve",
 	"wrist",
-	"forearm",
+}
+
+local firstPersonHiddenTokens = {
+	"upperarm",
+	"armbase",
+	"sleeve",
+	"shoulder",
 	"elbowpad",
 }
 
-local function isFirstPersonBodyPart(part: BasePart): boolean
-	local name = string.lower(part.Name)
-
-	for _, token in visibleNameTokens do
+local function containsToken(name: string, tokens: {string}): boolean
+	for _, token in tokens do
 		if string.find(name, token, 1, true) then
 			return true
 		end
 	end
 
-	local tool = part:FindFirstAncestorOfClass("Tool")
-	return tool ~= nil
+	return false
 end
 
 local function rebuildFirstPersonParts()
-	table.clear(firstPersonParts)
+	table.clear(firstPersonShowParts)
+	table.clear(firstPersonHideParts)
 
 	if not character then
 		return
 	end
 
 	for _, descendant in character:GetDescendants() do
-		if descendant:IsA("BasePart") and isFirstPersonBodyPart(descendant) then
-			table.insert(firstPersonParts, descendant)
+		if not descendant:IsA("BasePart") then
+			continue
+		end
+
+		if descendant:FindFirstAncestorOfClass("Tool") then
+			table.insert(firstPersonShowParts, descendant)
+			continue
+		end
+
+		local name = string.lower(descendant.Name)
+
+		if containsToken(name, firstPersonHiddenTokens)
+			or name == "left arm"
+			or name == "right arm" then
+			table.insert(firstPersonHideParts, descendant)
+		elseif containsToken(name, firstPersonVisibleTokens) then
+			table.insert(firstPersonShowParts, descendant)
 		end
 	end
 end
@@ -79,14 +99,24 @@ local function queueFirstPersonPartsRebuild()
 	end)
 end
 
-local function forceHandsVisible()
-	for index = #firstPersonParts, 1, -1 do
-		local part = firstPersonParts[index]
+local function updateFirstPersonBodyVisibility()
+	for index = #firstPersonShowParts, 1, -1 do
+		local part = firstPersonShowParts[index]
 
 		if not part.Parent then
-			table.remove(firstPersonParts, index)
+			table.remove(firstPersonShowParts, index)
 		else
 			part.LocalTransparencyModifier = 0
+		end
+	end
+
+	for index = #firstPersonHideParts, 1, -1 do
+		local part = firstPersonHideParts[index]
+
+		if not part.Parent then
+			table.remove(firstPersonHideParts, index)
+		else
+			part.LocalTransparencyModifier = 1
 		end
 	end
 end
@@ -230,7 +260,8 @@ local function applyMovement()
 	end
 
 	humanoid.AutoRotate = true
-	humanoid.CameraOffset = Vector3.new(0, -0.62, -0.08)
+	-- Chest-height bodycam, pushed forward enough that the shoulders do not fill the frame.
+	humanoid.CameraOffset = Vector3.new(0, -0.54, -0.48)
 
 	if crouching then
 		humanoid.WalkSpeed = Config.Movement.CrouchSpeed
@@ -336,7 +367,7 @@ RunService:BindToRenderStep("BodycamCamera", Enum.RenderPriority.Camera.Value + 
 		return
 	end
 
-	forceHandsVisible()
+	updateFirstPersonBodyVisibility()
 
 	elapsed += dt
 
