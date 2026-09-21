@@ -13,6 +13,10 @@ local ready = true
 local reloading = false
 local connectedTools: {[Tool]: boolean} = {}
 
+local function campaignStarted(): boolean
+	return player:GetAttribute("CampaignStarted") == true
+end
+
 local function updateToolName()
 	if equippedTool then
 		equippedTool.Name = string.format(
@@ -36,6 +40,10 @@ local function recoil()
 end
 
 local function reload()
+	if not campaignStarted() then
+		return
+	end
+
 	if not equippedTool or reloading or ammo >= Config.Weapon.MagazineSize or reserve <= 0 then
 		return
 	end
@@ -44,7 +52,7 @@ local function reload()
 	ready = false
 	task.wait(Config.Weapon.ReloadTime)
 
-	if not equippedTool then
+	if not equippedTool or not campaignStarted() then
 		reloading = false
 		ready = true
 		return
@@ -83,6 +91,10 @@ local function connectTool(tool: Tool)
 	end)
 
 	tool.Activated:Connect(function()
+		if not campaignStarted() then
+			return
+		end
+
 		if equippedTool ~= tool or not ready or reloading then
 			return
 		end
@@ -137,7 +149,7 @@ if player.Character then
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed or not equippedTool then
+	if gameProcessed or not equippedTool or not campaignStarted() then
 		return
 	end
 
